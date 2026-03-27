@@ -57,12 +57,15 @@ def get_series_updates_by_package(ppa, series_filter=None, package_filter=None):
             series = src.distro_series_link.split("/")[-1]
             latest_series = latest_package.distro_series_link.split("/")[-1]
 
+            ver = src.source_package_version.split("-")[0]
+            latest_ver = latest_package.source_package_version.split("-")[0]
+
             if series_filter and series not in series_filter and latest_series not in series_filter:
                 continue
 
             if (
                 series != latest_series and
-                src.source_package_version != latest_package.source_package_version
+                ver != latest_ver
             ):
                 series_updates.append(
                     SeriesUpdate(
