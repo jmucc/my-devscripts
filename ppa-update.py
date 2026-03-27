@@ -60,7 +60,7 @@ def get_series_updates_by_package(ppa, series_filter=None, package_filter=None):
             ver = src.source_package_version.split("-")[0]
             latest_ver = latest_package.source_package_version.split("-")[0]
 
-            if series_filter and series not in series_filter and latest_series not in series_filter:
+            if series_filter and (series not in series_filter or latest_series not in series_filter):
                 continue
 
             if (
