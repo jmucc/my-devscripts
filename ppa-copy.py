@@ -81,8 +81,8 @@ def main():
     d_pkgs = get_published_sources(dest, series)
 
     for name, ver in s_pkgs.items():
-        if name not in d_pkgs or d_pkgs[name] != ver:
-            print(f"{'[dry-run] ' if args.dry_run else ''}[{series}] Updating: {name} ({d_pkgs.get(name, 'None')} -> {ver})")
+        if name in d_pkgs and d_pkgs[name] != ver:
+            print(f"{'[dry-run] ' if args.dry_run else ''}Updating on {series}: {name} ({d_pkgs.get(name, 'None')} -> {ver})")
             if not args.dry_run:
                 dest.copyPackage(
                     source_name=name,
