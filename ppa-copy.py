@@ -65,6 +65,11 @@ def main():
         help="Limit to packages whose name contains this substring",
     )
     parser.add_argument(
+        "--dest-series",
+        metavar="SERIES",
+        help="Destination series name (defaults to the same as <series>)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print what would be copied without actually copying",
@@ -78,24 +83,26 @@ def main():
     source_user, source_ppa = args.source
     dest_user, dest_ppa = args.dest
     series = args.series
+    dest_series = args.dest_series or series
 
     source = lp.load(ppa_api_url(source_user, source_ppa))
     dest = lp.load(ppa_api_url(dest_user, dest_ppa))
 
     s_pkgs = get_published_sources(source, series)
-    d_pkgs = get_published_sources(dest, series)
+    d_pkgs = get_published_sources(dest, dest_series)
 
     for name, ver in s_pkgs.items():
         if args.package and args.package not in name:
             continue
         if name in d_pkgs and d_pkgs[name] != ver:
-            print(f"{'[dry-run] ' if args.dry_run else ''}Copying on {series}: {name} ({d_pkgs.get(name, 'None')} -> {ver})")
+            series_label = f"{series} -> {dest_series}" if dest_series != series else series
+            print(f"{'[dry-run] ' if args.dry_run else ''}Copying {series_label}: {name} ({d_pkgs.get(name, 'None')} -> {ver})")
             if not args.dry_run:
                 dest.copyPackage(
                     source_name=name,
                     version=ver,
                     from_archive=source,
-                    to_series=series,
+                    to_series=dest_series,
                     to_pocket="Release",
                     include_binaries=True,
                 )
