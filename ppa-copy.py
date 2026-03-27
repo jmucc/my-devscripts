@@ -60,6 +60,11 @@ def main():
         help="Ubuntu series name (for example: focal, jammy, noble)",
     )
     parser.add_argument(
+        "--package",
+        metavar="SUBSTRING",
+        help="Limit to packages whose name contains this substring",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print what would be copied without actually copying",
@@ -81,8 +86,10 @@ def main():
     d_pkgs = get_published_sources(dest, series)
 
     for name, ver in s_pkgs.items():
+        if args.package and args.package not in name:
+            continue
         if name in d_pkgs and d_pkgs[name] != ver:
-            print(f"{'[dry-run] ' if args.dry_run else ''}Updating on {series}: {name} ({d_pkgs.get(name, 'None')} -> {ver})")
+            print(f"{'[dry-run] ' if args.dry_run else ''}Copying on {series}: {name} ({d_pkgs.get(name, 'None')} -> {ver})")
             if not args.dry_run:
                 dest.copyPackage(
                     source_name=name,
