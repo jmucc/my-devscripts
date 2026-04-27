@@ -1,10 +1,10 @@
 """Copy existing binaries for published packages from one PPA to another.
 
 Usage:
-    python3 ppa-copy.py <source_user>/<source_ppa> <dest_user>/<dest_ppa> [--packages PACKAGES [PACKAGES ...]] [--series SERIES [SERIES ...]] [--dry-run]
+    python3 ppa_copy.py <source_user>/<source_ppa> <dest_user>/<dest_ppa> [--packages PACKAGES [PACKAGES ...]] [--series SERIES [SERIES ...]] [--dry-run]
 
 Example:
-    python3 ppa-copy.py landscape/self-hosted-beta landscape/saas --packages mypkg1 mypkg2 --series jammy noble --dry-run
+    python3 ppa_copy.py landscape/self-hosted-beta landscape/saas --packages mypkg1 mypkg2 --series jammy noble --dry-run
 """
 
 import argparse
