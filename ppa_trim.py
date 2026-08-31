@@ -99,6 +99,8 @@ def trim_packages(target, reference, dry_run):
                     f"[warning] Version mismatch: {name} for {series} "
                     f"(target {target_version}, reference {reference_version})"
                 )
+            else:
+                print(f"[info] {name} for {series} is present in reference PPA at same version")
             continue
 
         print(
