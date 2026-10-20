@@ -22,7 +22,7 @@ EOF
 }
 
 series="noble"
-ppas="landscape/self-hosted-24.04"
+ppas="landscape/self-hosted-beta"
 name="test-landscape"
 full_install=false
 vm=false
