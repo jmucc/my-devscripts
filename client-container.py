@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-from asyncio import sleep
+from time import sleep
 import subprocess
 import sys
 
 TOKEN = "<YOUR_TOKEN_HERE>"
 
 USAGE = (
-    "Usage: {prog} [--ip server-ip] [--series series] [--client-name client-name] [--account-name account-name] [--hostname hostname] [--ppas ppas] [--register register]\n"
+    "Usage: {prog} [--ip server-ip] [--series series] [--client-name client-name] [--account-name account-name] [--hostname hostname] [--ppas ppas] [--register register] [--vm vm] [--attach attach] [--key key]\n"
     "\n"
     "Arguments:\n"
     "  server-ip               Landscape server IP (default: none)\n"
@@ -17,7 +17,9 @@ USAGE = (
     "  hostname                Hostname to set inside the container (default: none)\n"
     "  ppas                    Additional PPAs to add inside the container (default: none)\n"
     "  register                Whether to register to Landscape (default: true)\n"
-    
+    "  attach                  Whether to attach PRO (default: true)\n"
+    "  vm                      Whether to install client in a VM (default: false)\n"
+    "  key                     Registration key (default: none)"
 )
 
 
@@ -44,6 +46,9 @@ def main(argv):
     hostname = None
     ppas = None
     register = "true"
+    vm = "false"
+    attach = "true"
+    key = None
 
     idx = 1
     while idx < len(argv) and argv[idx].startswith("--"):
@@ -68,6 +73,15 @@ def main(argv):
         elif argv[idx] == "--register":
             register = argv[idx + 1]
             idx += 2
+        elif argv[idx] == "--vm":
+            vm = argv[idx + 1]
+            idx += 2
+        elif argv[idx] == "--attach":
+            attach = argv[idx + 1]
+            idx += 2
+        elif argv[idx] == "--key":
+            key = argv[idx + 1]
+            idx += 2
         else:
             sys.stderr.write(f"Unknown option: {argv[idx]}\n")
             sys.stderr.write(USAGE.format(prog=argv[0]))
@@ -85,36 +99,43 @@ def main(argv):
         stderr=subprocess.DEVNULL,
         check=False,
     )
-    run(["lxc", "launch", f"ubuntu:{series}", name])
+
+    args = ["lxc", "launch", f"ubuntu:{series}", name]
+    if vm == "true":
+        args.append("--vm")
+    run(args)
+    if vm == "true":
+        sleep(20) # VMs take a minute to initialize
 
     # Let first-boot initialization finish so pro/apt/network are ready.
     lxc_exec(name, "cloud-init status --wait")
 
-    print("Attaching Ubuntu Pro...")
-    lxc_exec(
-        name,
-        '''
+    if attach == "true":
+        print("Attaching Ubuntu Pro...")
+        lxc_exec(
+            name,
+            '''
 set -e
 for i in 1 2 3 4 5; do
-	if sudo pro attach {token} >/tmp/pro-attach.log 2>&1; then
-		echo "Ubuntu Pro attached"
-		exit 0
-	fi
+    if sudo pro attach {token} >/tmp/pro-attach.log 2>&1; then
+        echo "Ubuntu Pro attached"
+        exit 0
+    fi
 
-	if sudo pro status 2>/dev/null | grep -qi "attached"; then
-		echo "Ubuntu Pro already attached"
-		exit 0
-	fi
+    if sudo pro status 2>/dev/null | grep -qi "attached"; then
+        echo "Ubuntu Pro already attached"
+        exit 0
+    fi
 
-	echo "pro attach attempt $i failed; retrying in 5s"
-	sleep 5
+    echo "pro attach attempt $i failed; retrying in 5s"
+    sleep 5
 done
 
 echo "pro attach failed after retries"
 cat /tmp/pro-attach.log
 exit 1
-'''.format(token=TOKEN),
-    )
+    '''.format(token=TOKEN),
+        )
 
     if ppas:
         ppa_list = [p.strip() for p in ppas.split(",") if p.strip()]
@@ -166,6 +187,7 @@ ping_url = http://{address}/ping
 ssl_public_key = /etc/landscape/server.pem
 include_manager_plugins = ScriptExecution
 script_users = ubuntu,landscape,root
+log_level = debug 
 EOF""",
     )
 
@@ -174,8 +196,11 @@ EOF""",
         return 0
 
     print("Running landscape-config --silent...")
+    if key:
+        lxc_exec(name, f"sudo landscape-config --silent -p {key}")
+        return 0
+    
     lxc_exec(name, "sudo landscape-config --silent")
-
     return 0
 
 
